@@ -106,20 +106,26 @@ try to `create extension`, but enabling from the dashboard is more reliable.
 
 ### 1.3 Apply the migrations
 
-**Option A — SQL editor (no tooling).** Open **SQL Editor** and run each file
-from `supabase/migrations/` **in order**, one at a time:
+**Option A — one paste (easiest).** Open **SQL Editor → New query**, paste the
+whole of [`supabase/setup_all.sql`](./supabase/setup_all.sql), and run it. That
+file is migrations 0001–0007 concatenated plus verification queries. The editor
+runs it as a single transaction, so you cannot end up half-applied, and it is
+safe to re-run.
+
+**Option B — file by file.** If you prefer to see each step, run the files from
+`supabase/migrations/` **in order**, one at a time:
 
 ```
-0001_extensions_and_types.sql
-0002_tables.sql
-0003_helpers_and_triggers.sql
-0004_dispatch.sql
-0005_rls.sql
-0006_realtime_and_cron.sql
-0007_bootstrap.sql
+0001_extensions_and_types.sql    types + extensions
+0002_tables.sql                  10 tables, indexes, constraints
+0003_helpers_and_triggers.sql    settings accessors, signup trigger, geo sync
+0004_dispatch.sql                the dispatch engine
+0005_rls.sql                     Row Level Security + grants
+0006_realtime_and_cron.sql       Realtime publication + the pg_cron clock
+0007_bootstrap.sql               promote_to_admin, rider setup helpers
 ```
 
-**Option B — Supabase CLI.**
+**Option C — Supabase CLI.**
 
 ```bash
 npx supabase login
