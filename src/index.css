@@ -1,0 +1,138 @@
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 24% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 24% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 24% 11%;
+
+    /* Deep ink primary - reads as premium transport, not SaaS blue. */
+    --primary: 222 47% 13%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 16% 96%;
+    --secondary-foreground: 222 24% 16%;
+
+    --muted: 220 16% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 158 74% 38%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 158 74% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 30 60% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 222 47% 13%;
+
+    --radius: 0.875rem;
+  }
+
+  .dark {
+    --background: 222 32% 7%;
+    --foreground: 210 20% 96%;
+
+    --card: 222 28% 10%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 222 28% 10%;
+    --popover-foreground: 210 20% 96%;
+
+    --primary: 0 0% 100%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 222 20% 16%;
+    --secondary-foreground: 210 20% 96%;
+
+    --muted: 222 20% 16%;
+    --muted-foreground: 218 11% 65%;
+
+    --accent: 158 64% 44%;
+    --accent-foreground: 222 47% 11%;
+
+    --success: 158 64% 44%;
+    --success-foreground: 222 47% 11%;
+
+    --warning: 38 92% 56%;
+    --warning-foreground: 30 60% 12%;
+
+    --destructive: 0 72% 57%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 16% 20%;
+    --input: 222 16% 22%;
+    --ring: 210 20% 80%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  /* Respect the iOS home indicator / Android nav bar. */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+  }
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0.75rem);
+  }
+
+  /* Numeric readouts (ETA, countdown, fare) should not jitter as digits change. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* A rider/pickup marker with an attention halo. */
+  .marker-pulse::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: hsl(var(--accent) / 0.45);
+    animation: pulse-ring 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+  }
+}
+
+/* MapLibre chrome restyled to match the app rather than the library default. */
+.maplibregl-ctrl-group {
+  @apply rounded-xl border border-border bg-card shadow-card;
+}
+.maplibregl-ctrl-group button + button {
+  @apply border-t border-border;
+}
+.maplibregl-ctrl-attrib {
+  @apply text-[10px];
+}
+.maplibregl-canvas {
+  outline: none;
+}

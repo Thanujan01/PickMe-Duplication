@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ride">
+  <rect width="512" height="512" rx="112" fill="#0b0f19"/>
+  <path d="M150 300a115 115 0 0 0 212 0" fill="none" stroke="#10b981" stroke-width="24" stroke-linecap="round"/>
+  <path d="M256 130c-40 0-72 32-72 72 0 50 72 128 72 128s72-78 72-128c0-40-32-72-72-72z" fill="#ffffff"/>
+  <circle cx="256" cy="200" r="27" fill="#0b0f19"/>
+</svg>
