@@ -116,7 +116,9 @@ returns table (rider_id uuid, distance_m double precision, last_seen timestamptz
 language plpgsql
 stable
 security definer
-set search_path = public
+-- `extensions` is required: PostGIS is installed there on Supabase, so without
+-- it the `geography` declaration below fails with 42704 at CREATE time.
+set search_path = public, extensions
 as $$
 declare
   v_pickup geography;

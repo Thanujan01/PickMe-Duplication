@@ -204,10 +204,16 @@ create trigger profiles_sync_rider after insert or update of role on public.prof
 
 -- ---------------------------------------------------------------------------
 -- Geography columns are derived, never written by clients.
+--
+-- NOTE: PostGIS lives in the `extensions` schema on Supabase, so every function
+-- that names a PostGIS type or calls a PostGIS function must list `extensions`
+-- in its search_path. Pinning search_path is what stops search-path hijacking,
+-- but it also hides `geography` and `st_*` unless extensions is included.
 -- ---------------------------------------------------------------------------
 create or replace function public.sync_rider_location_geo()
 returns trigger
 language plpgsql
+set search_path = public, extensions
 as $$
 begin
   new.location   := st_setsrid(st_makepoint(new.longitude, new.latitude), 4326)::geography;
@@ -223,6 +229,7 @@ create trigger rider_locations_geo before insert or update on public.rider_locat
 create or replace function public.sync_booking_geo()
 returns trigger
 language plpgsql
+set search_path = public, extensions
 as $$
 begin
   new.pickup_location :=
