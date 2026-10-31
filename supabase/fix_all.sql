@@ -1,0 +1,390 @@
+-- =============================================================================
+-- Ride App - APPLY ALL FIXES
+--
+-- Run this whole file in the Supabase SQL editor. Idempotent and safe to
+-- re-run. It applies two fixes to a database created before 2026-10-31:
+--
+--   1. RLS infinite recursion
+--      Symptom: "infinite recursion detected in policy for relation
+--      "bookings"" on sign-in. profiles -> bookings -> booking_dispatches
+--      -> bookings formed a cycle, because Postgres evaluates the policy of
+--      every table a policy references. Every cross-table check now lives in
+--      a SECURITY DEFINER helper, which does not re-trigger RLS.
+--
+--   2. GPS accuracy limit too strict
+--      Symptom: a rider cannot go online; "GPS signal is too weak".
+--      update_rider_location rejected anything less precise than 2000 m,
+--      but a laptop positioning by Wi-Fi reports 1000-50000 m. The limit is
+--      now the `gps_max_accuracy_m` setting (default 10000) and the error
+--      states the actual reading.
+--
+-- Both are already in migrations 0005 and 0008 for fresh installs.
+--
+-- Afterwards run supabase/diagnose.sql to confirm.
+-- =============================================================================
+
+
+-- #############################################################################
+-- ## 1. RLS recursion
+-- #############################################################################
+
+-- ---------------------------------------------------------------------------
+-- Cross-table visibility helpers
+--
+-- A policy on table A that sub-queries table B makes Postgres evaluate B's
+-- policy, and if B's policy sub-queries A you get:
+--
+--     ERROR: infinite recursion detected in policy for relation "bookings"
+--
+-- which is exactly what `profiles -> bookings -> booking_dispatches -> bookings`
+-- produced. Every cross-table check therefore lives in a SECURITY DEFINER
+-- function: it runs as the table owner, so RLS is not re-evaluated inside it
+-- and the cycle is broken.
+--
+-- These leak nothing. Each one answers a yes/no question about the CALLING
+-- user (auth.uid()), never about anyone else, so an authenticated caller can
+-- only learn something it is already entitled to know.
+-- ---------------------------------------------------------------------------
+
+-- Is p_other the counterparty on a booking the caller is currently on?
+create or replace function public.shares_live_booking(p_other uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.bookings b
+    where b.status = any (public.live_booking_statuses())
+      and (
+        (b.customer_id = auth.uid() and b.rider_id = p_other)
+        or (b.rider_id = auth.uid() and b.customer_id = p_other)
+      )
+  );
+$$;
+
+-- Is the caller a rider holding an open offer from customer p_customer?
+create or replace function public.has_live_offer_from(p_customer uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.booking_dispatches d
+    join public.bookings b on b.id = d.booking_id
+    where d.rider_id = auth.uid()
+      and d.status = 'pending'
+      and d.expires_at > now()
+      and b.customer_id = p_customer
+  );
+$$;
+
+-- Is p_rider driving a live booking that the caller owns? This is the single
+-- predicate that gates rider_locations, and therefore the whole fleet-privacy
+-- guarantee.
+create or replace function public.is_my_active_rider(p_rider uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.bookings b
+    where b.customer_id = auth.uid()
+      and b.rider_id = p_rider
+      and b.status = any (public.live_booking_statuses())
+  );
+$$;
+
+-- Has p_booking ever been offered to the caller?
+create or replace function public.was_offered_to_me(p_booking uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.booking_dispatches d
+    where d.booking_id = p_booking and d.rider_id = auth.uid()
+  );
+$$;
+
+-- Is the caller the customer on p_booking?
+create or replace function public.owns_booking(p_booking uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.bookings b
+    where b.id = p_booking and b.customer_id = auth.uid()
+  );
+$$;
+
+-- Is the caller either party on p_booking?
+create or replace function public.is_booking_party(p_booking uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.bookings b
+    where b.id = p_booking
+      and (b.customer_id = auth.uid() or b.rider_id = auth.uid())
+  );
+$$;
+
+-- ---------------------------------------------------------------------------
+-- profiles
+-- ---------------------------------------------------------------------------
+drop policy if exists profiles_select on public.profiles;
+create policy profiles_select on public.profiles
+  for select to authenticated
+  using (
+    id = auth.uid()
+    or public.is_admin()
+    -- Counterparty disclosure: only while a booking is actually live, and only
+    -- between the two people on it (spec section 5 "show rider phone number").
+    or public.shares_live_booking(public.profiles.id)
+    -- A rider holding a live offer may see the requesting customer's name.
+    or public.has_live_offer_from(public.profiles.id)
+  );
+
+drop policy if exists profiles_update on public.profiles;
+create policy profiles_update on public.profiles
+  for update to authenticated
+  using (id = auth.uid() or public.is_admin())
+  with check (id = auth.uid() or public.is_admin());
+
+drop policy if exists profiles_admin_insert on public.profiles;
+create policy profiles_admin_insert on public.profiles
+  for insert to authenticated
+  with check (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- riders
+-- ---------------------------------------------------------------------------
+drop policy if exists riders_select on public.riders;
+create policy riders_select on public.riders
+  for select to authenticated
+  using (
+    id = auth.uid()
+    or public.is_admin()
+    or public.is_my_active_rider(public.riders.id)
+  );
+
+-- Deliberately no UPDATE policy: see update_rider_profile() above.
+drop policy if exists riders_update_own on public.riders;
+
+drop policy if exists riders_admin_insert on public.riders;
+create policy riders_admin_insert on public.riders
+  for insert to authenticated
+  with check (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- vehicles
+-- ---------------------------------------------------------------------------
+drop policy if exists vehicles_select on public.vehicles;
+create policy vehicles_select on public.vehicles
+  for select to authenticated
+  using (
+    rider_id = auth.uid()
+    or public.is_admin()
+    or public.is_my_active_rider(public.vehicles.rider_id)
+  );
+
+drop policy if exists vehicles_write on public.vehicles;
+create policy vehicles_write on public.vehicles
+  for all to authenticated
+  using (rider_id = auth.uid() or public.is_admin())
+  with check (rider_id = auth.uid() or public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- rider_locations  <-- the privacy-critical table (spec sections 8, 21.8)
+--
+-- A customer can read exactly one rider's position: the one currently driving
+-- their own live booking. Supabase Realtime applies this same policy, so the
+-- websocket stream is filtered identically.
+-- ---------------------------------------------------------------------------
+drop policy if exists rider_locations_select on public.rider_locations;
+create policy rider_locations_select on public.rider_locations
+  for select to authenticated
+  using (
+    rider_id = auth.uid()
+    or public.is_admin()
+    or public.is_my_active_rider(public.rider_locations.rider_id)
+  );
+
+drop policy if exists rider_locations_write on public.rider_locations;
+create policy rider_locations_write on public.rider_locations
+  for all to authenticated
+  using (rider_id = auth.uid())
+  with check (rider_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- bookings  (reads only; every mutation goes through an RPC)
+-- ---------------------------------------------------------------------------
+drop policy if exists bookings_select on public.bookings;
+create policy bookings_select on public.bookings
+  for select to authenticated
+  using (
+    customer_id = auth.uid()
+    or rider_id = auth.uid()
+    or public.is_admin()
+    -- A rider must be able to read a booking they have been offered, including
+    -- after the offer closes so their history stays readable.
+    or public.was_offered_to_me(public.bookings.id)
+  );
+
+-- ---------------------------------------------------------------------------
+-- booking_dispatches
+-- ---------------------------------------------------------------------------
+drop policy if exists booking_dispatches_select on public.booking_dispatches;
+create policy booking_dispatches_select on public.booking_dispatches
+  for select to authenticated
+  using (
+    rider_id = auth.uid()
+    or public.is_admin()
+    or public.owns_booking(public.booking_dispatches.booking_id)
+  );
+
+-- ---------------------------------------------------------------------------
+-- booking_events
+-- ---------------------------------------------------------------------------
+drop policy if exists booking_events_select on public.booking_events;
+create policy booking_events_select on public.booking_events
+  for select to authenticated
+  using (
+    public.is_admin()
+    or public.is_booking_party(public.booking_events.booking_id)
+  );
+
+-- Policies are evaluated as the querying role, so it needs EXECUTE on these.
+grant execute on function
+  public.shares_live_booking(uuid),
+  public.has_live_offer_from(uuid),
+  public.is_my_active_rider(uuid),
+  public.was_offered_to_me(uuid),
+  public.owns_booking(uuid),
+  public.is_booking_party(uuid)
+  to authenticated;
+
+
+-- Policies are evaluated as the querying role, so it needs EXECUTE on these.
+grant execute on function
+  public.shares_live_booking(uuid),
+  public.has_live_offer_from(uuid),
+  public.is_my_active_rider(uuid),
+  public.was_offered_to_me(uuid),
+  public.owns_booking(uuid),
+  public.is_booking_party(uuid)
+  to authenticated;
+
+
+-- #############################################################################
+-- ## 2. GPS accuracy limit
+-- #############################################################################
+
+insert into public.admin_settings (key, value, label) values
+  ('gps_max_accuracy_m', '10000'::jsonb,
+   'Reject GPS fixes less precise than this many metres')
+on conflict (key) do nothing;
+
+create or replace function public.update_rider_location(
+  p_latitude  double precision,
+  p_longitude double precision,
+  p_heading   double precision default null,
+  p_speed     double precision default null,
+  p_accuracy  double precision default null
+)
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_now timestamptz := now();
+  v_max integer := public.app_setting_int('gps_max_accuracy_m', 10000);
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  if not exists (select 1 from public.riders where id = v_uid) then
+    raise exception 'not_a_rider';
+  end if;
+
+  -- Validation: reject physically impossible or hopelessly imprecise fixes
+  -- rather than poisoning the dispatch ranking with them.
+  if p_latitude is null or p_longitude is null then raise exception 'invalid_coordinates'; end if;
+  if p_latitude  not between -90  and 90  then raise exception 'invalid_coordinates'; end if;
+  if p_longitude not between -180 and 180 then raise exception 'invalid_coordinates'; end if;
+
+  if p_accuracy is not null and p_accuracy > v_max then
+    -- DETAIL carries the numbers so the UI can explain itself.
+    raise exception 'accuracy_too_low'
+      using detail = format('reported %s m, limit %s m', round(p_accuracy::numeric), v_max);
+  end if;
+
+  insert into public.rider_locations as rl
+    (rider_id, latitude, longitude, heading, speed, accuracy, last_seen)
+  values
+    (v_uid, p_latitude, p_longitude,
+     case when p_heading between 0 and 359.999 then p_heading end,
+     greatest(p_speed, 0), p_accuracy, v_now)
+  on conflict (rider_id) do update set
+    latitude  = excluded.latitude,
+    longitude = excluded.longitude,
+    heading   = coalesce(excluded.heading, rl.heading),
+    speed     = excluded.speed,
+    accuracy  = excluded.accuracy,
+    last_seen = v_now;
+
+  return v_now;
+end;
+$$;
+
+grant execute on function public.update_rider_location(
+  double precision, double precision, double precision, double precision, double precision
+) to authenticated;
+
+-- Allow the client to read the new key so the rider screen can explain the
+-- limit before a write is attempted.
+drop policy if exists admin_settings_select on public.admin_settings;
+create policy admin_settings_select on public.admin_settings
+  for select to authenticated
+  using (
+    key in (
+      'dispatch_window_seconds',
+      'dispatch_radius_m',
+      'gps_stale_seconds',
+      'gps_max_accuracy_m',
+      'search_timeout_seconds',
+      'max_dispatch_attempts',
+      'fare_base',
+      'fare_per_km',
+      'fare_per_min',
+      'allow_customer_cancel_after_accept'
+    )
+  );
+
+
+-- #############################################################################
+-- ## Verify
+-- #############################################################################
+
+select
+  (select count(*) from pg_proc
+    where pronamespace = 'public'::regnamespace
+      and proname in ('shares_live_booking','has_live_offer_from','is_my_active_rider',
+                      'was_offered_to_me','owns_booking','is_booking_party')) as recursion_helpers,
+  (select value #>> '{}' from public.admin_settings where key = 'gps_max_accuracy_m') as gps_max_accuracy_m,
+  'expect 6 and 10000' as expected;

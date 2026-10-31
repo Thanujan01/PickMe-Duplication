@@ -41,7 +41,8 @@ const ERROR_COPY: Record<string, string> = {
   not_a_rider: 'This action is only available to riders.',
   rider_deactivated: 'Your rider account is deactivated. Contact support.',
   invalid_coordinates: 'That location looks invalid. Try picking it again.',
-  accuracy_too_low: 'Your GPS signal is too weak. Move to an open area.',
+  accuracy_too_low:
+    'Your GPS signal is too weak to dispatch from. Move to an open area, or ask an admin to raise gps_max_accuracy_m.',
   active_booking_exists: 'You already have a ride in progress.',
   booking_not_found: 'That booking no longer exists.',
   booking_taken: 'Another rider accepted this ride first.',
@@ -84,7 +85,10 @@ export function toAppError(error: unknown): AppError {
     const copy = ERROR_COPY[key];
 
     if (copy) {
-      const err = new Error(copy) as AppError;
+      // Some errors carry numbers in DETAIL (e.g. accuracy_too_low reports the
+      // reading and the limit). Showing them turns a mystery into an action.
+      const withDetail = e.details ? `${copy} (${e.details})` : copy;
+      const err = new Error(withDetail) as AppError;
       err.code = key;
       if (e.details) err.detail = e.details;
       return err;

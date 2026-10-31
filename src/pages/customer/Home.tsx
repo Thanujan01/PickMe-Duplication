@@ -169,13 +169,21 @@ export default function CustomerHome() {
           </Button>
         )}
 
-        {permission === 'denied' && !active && (
-          <div className="absolute inset-x-3 top-20 z-20 mr-14 flex items-start gap-2.5 rounded-xl border border-border bg-card/95 p-3 shadow-card backdrop-blur">
+        {/* Any location problem, not just an outright denial. Without this the
+            map just looks empty and there is nothing to act on. */}
+        {!active && !pinMode && (gpsError || permission === 'denied' || permission === 'insecure') && (
+          <div className="absolute inset-x-3 top-20 z-20 mr-14 flex items-start gap-2.5 rounded-xl border border-warning/40 bg-card/95 p-3 shadow-card backdrop-blur">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">Location is blocked</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">
+                {permission === 'insecure' ? 'Location needs HTTPS' : "Can't read your location"}
+              </p>
               <p className="text-xs text-muted-foreground">
-                Allow location in your browser settings, or search for your pickup point instead.
+                {gpsError ?? 'Allow location in your browser settings.'}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                You can still book: tap <span className="font-medium">Pickup</span> and search for
+                the address or drop a pin.
               </p>
             </div>
           </div>

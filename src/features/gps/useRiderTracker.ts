@@ -34,7 +34,10 @@ export interface RiderTrackerState {
 }
 
 export function useRiderTracker(enabled: boolean): RiderTrackerState {
-  const { fix, permission, error: gpsError, request } = useGeolocation(enabled, 200);
+  // Deliberately generous: update_rider_location() owns the real limit
+  // (gps_max_accuracy_m) and reports it in its error. A second, stricter
+  // client-side threshold would silently drop fixes the server would accept.
+  const { fix, permission, error: gpsError, request } = useGeolocation(enabled, 2000);
 
   const [lastSyncedAt, setLastSyncedAt] = React.useState<number | null>(null);
   const [syncError, setSyncError] = React.useState<string | null>(null);

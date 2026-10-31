@@ -193,6 +193,18 @@ export default function RiderDashboard() {
             )}
           </div>
 
+          {(tracker.gpsError || tracker.permission === 'denied' || tracker.permission === 'insecure') && (
+            <div className="pointer-events-auto flex items-start gap-2 rounded-xl border border-warning/40 bg-card/95 p-3 shadow-card backdrop-blur">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  {tracker.permission === 'insecure' ? 'Location needs HTTPS' : 'Location problem'}
+                </p>
+                <p className="text-xs text-muted-foreground">{tracker.gpsError}</p>
+              </div>
+            </div>
+          )}
+
           {tracker.syncError && (
             <div className="pointer-events-auto flex items-start gap-2 rounded-xl border border-destructive/30 bg-card/95 p-3 shadow-card backdrop-blur">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />

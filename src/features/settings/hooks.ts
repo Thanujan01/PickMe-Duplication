@@ -7,6 +7,7 @@ export interface PublicSettings {
   dispatchWindowSeconds: number;
   dispatchRadiusM: number;
   gpsStaleSeconds: number;
+  gpsMaxAccuracyM: number;
   searchTimeoutSeconds: number;
   maxDispatchAttempts: number;
   fareBase: number;
@@ -19,6 +20,7 @@ const DEFAULTS: PublicSettings = {
   dispatchWindowSeconds: 10,
   dispatchRadiusM: 15000,
   gpsStaleSeconds: 45,
+  gpsMaxAccuracyM: 10000,
   searchTimeoutSeconds: 180,
   maxDispatchAttempts: 10,
   fareBase: 150,
@@ -51,6 +53,7 @@ export function usePublicSettings() {
         dispatchWindowSeconds: num('dispatch_window_seconds', DEFAULTS.dispatchWindowSeconds),
         dispatchRadiusM: num('dispatch_radius_m', DEFAULTS.dispatchRadiusM),
         gpsStaleSeconds: num('gps_stale_seconds', DEFAULTS.gpsStaleSeconds),
+        gpsMaxAccuracyM: num('gps_max_accuracy_m', DEFAULTS.gpsMaxAccuracyM),
         searchTimeoutSeconds: num('search_timeout_seconds', DEFAULTS.searchTimeoutSeconds),
         maxDispatchAttempts: num('max_dispatch_attempts', DEFAULTS.maxDispatchAttempts),
         fareBase: num('fare_base', DEFAULTS.fareBase),
