@@ -1,8 +1,17 @@
 name: Deploy to GitHub Pages
 
+# Manual only.
+#
+# The automatic version failed: `actions/configure-pages` with
+# `enablement: true` needs the workflow token to have `pages: write`, and new
+# repositories default to read-only, so every push produced a failed run.
+#
+# To use this instead of `npm run deploy`, set
+#   Settings -> Actions -> General -> Workflow permissions
+#     -> "Read and write permissions"
+# then run this workflow once from the Actions tab. After that, change the
+# trigger below back to `push: branches: [main]` for deploy-on-push.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

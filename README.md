@@ -12,6 +12,8 @@ MapLibre GL + OpenStreetMap (default)    │  pg_cron drives the dispatch clock
 Vercel (frontend)                        │  Google Maps / Firebase optional
 ```
 
+**Live demo: <https://thanujan01.github.io/PickMe-Duplication/>**
+
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — design decisions and the delivery plan
 - [`TESTING.md`](./TESTING.md) — how to verify every scenario, including the dispatch race
 
@@ -361,6 +363,31 @@ never roll back a booking — `push_notification()` swallows them deliberately.
 ---
 
 ## 5. Deploy
+
+### Frontend → GitHub Pages (what the live demo uses)
+
+```bash
+npm run deploy
+```
+
+Builds with `base=/PickMe-Duplication/`, adds the `404.html` SPA fallback and
+`.nojekyll`, and force-pushes the result to the `gh-pages` branch. Live about a
+minute later at <https://thanujan01.github.io/PickMe-Duplication/>.
+
+Build-time configuration comes from [`.env.production`](./.env.production),
+which is committed deliberately — both values in it ship inside the JavaScript
+bundle to every visitor anyway, and RLS is what protects the data. The
+service-role key must never go in it.
+
+There is also [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml)
+for deploy-on-push. It is manual-only because it needs
+**Settings → Actions → General → Workflow permissions → Read and write**, which
+new repositories do not grant by default.
+
+> After deploying, add the site URL to Supabase **Authentication → URL
+> Configuration** (Site URL and Redirect URLs). Password sign-in works without
+> this; email confirmation and password-reset links do not, because they
+> redirect to whatever Site URL is configured.
 
 ### Frontend → Vercel
 
