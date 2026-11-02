@@ -33,7 +33,8 @@ export type NotificationType =
   | 'booking_cancelled'
   | 'no_rider_available';
 
-export type VehicleType = 'car' | 'bike' | 'tuk' | 'van';
+/** The platform runs buses only (migration 0009 constrains this in SQL too). */
+export type VehicleType = 'bus';
 
 export interface Profile {
   id: string;

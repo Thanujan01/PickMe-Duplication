@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ChevronRight } from 'lucide-react';
 import { BookingStatusBadge } from './StatusBadge';
-import { formatDistance, formatDuration, formatMoney } from '@/lib/utils';
+import { formatDistance, formatDuration } from '@/lib/utils';
 import type { BookingWithParties } from '@/types/database';
 
 export function BookingListItem({
@@ -53,11 +53,6 @@ export function BookingListItem({
         <div className="mt-2.5 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="tabular">{formatDistance(booking.estimated_distance)}</span>
           <span className="tabular">{formatDuration(booking.estimated_duration)}</span>
-          {booking.status === 'completed' && (
-            <span className="tabular font-semibold text-foreground">
-              {formatMoney(booking.estimated_fare == null ? null : Number(booking.estimated_fare))}
-            </span>
-          )}
           {name && <span className="ml-auto truncate">{name}</span>}
         </div>
       </div>

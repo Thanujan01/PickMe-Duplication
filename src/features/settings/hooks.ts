@@ -78,7 +78,9 @@ export function useAllSettings() {
         .select('*')
         .order('key', { ascending: true });
       if (error) throw toAppError(error);
-      return data as AdminSetting[];
+      // Fares are still recorded in the database for reporting, but the product
+      // does not surface money anywhere, so they are not editable here either.
+      return (data as AdminSetting[]).filter((s) => !s.key.startsWith('fare_'));
     },
   });
 }

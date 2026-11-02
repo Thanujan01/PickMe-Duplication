@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Car, Pencil, Plus, Search, Star, UserCheck, UserX } from 'lucide-react';
+import { Bus, Car, Pencil, Plus, Search, Star, UserCheck, UserX } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,18 +20,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { initials, secondsSince } from '@/lib/utils';
 import { useAdminRiders, useSetRiderActive, useUpsertRiderDetails } from '@/features/admin/hooks';
 import { usePublicSettings } from '@/features/settings/hooks';
-import type { RiderWithProfile, VehicleType } from '@/types/database';
+import type { RiderWithProfile } from '@/types/database';
 
 const schema = z.object({
   fullName: z.string().trim().min(2, 'Enter the rider name'),
@@ -41,7 +34,6 @@ const schema = z.object({
     .regex(/^[+0-9 ()-]{6,24}$/, 'Enter a valid phone number')
     .or(z.literal('')),
   licenseNumber: z.string().trim().max(40).optional(),
-  vehicleType: z.enum(['car', 'bike', 'tuk', 'van']),
   make: z.string().trim().max(40).optional(),
   model: z.string().trim().max(40).optional(),
   color: z.string().trim().max(24).optional(),
@@ -230,7 +222,6 @@ function RiderDialog({
       fullName: rider?.profile?.full_name ?? '',
       phone: rider?.profile?.phone ?? '',
       licenseNumber: rider?.license_number ?? '',
-      vehicleType: (vehicle?.vehicle_type ?? 'car') as VehicleType,
       make: vehicle?.make ?? '',
       model: vehicle?.model ?? '',
       color: vehicle?.color ?? '',
@@ -246,7 +237,7 @@ function RiderDialog({
       fullName: values.fullName,
       phone: values.phone || undefined,
       licenseNumber: values.licenseNumber || undefined,
-      vehicleType: values.vehicleType,
+      vehicleType: 'bus',
       make: values.make,
       model: values.model,
       color: values.color,
@@ -283,20 +274,11 @@ function RiderDialog({
             </p>
             <div className="space-y-3">
               <Field label="Type">
-                <Select
-                  value={form.watch('vehicleType')}
-                  onValueChange={(v) => form.setValue('vehicleType', v as VehicleType)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="car">Car</SelectItem>
-                    <SelectItem value="bike">Bike</SelectItem>
-                    <SelectItem value="tuk">Tuk-tuk</SelectItem>
-                    <SelectItem value="van">Van</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex h-11 items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 text-sm">
+                  <Bus className="h-4 w-4 text-muted-foreground" />
+                  Bus
+                  <span className="ml-auto text-xs text-muted-foreground">only class</span>
+                </div>
               </Field>
               <Field label="Plate number" error={form.formState.errors.plateNumber?.message}>
                 <Input className="font-mono" {...form.register('plateNumber')} />

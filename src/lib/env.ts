@@ -49,13 +49,6 @@ export const env = {
   nominatimUrl: str('VITE_NOMINATIM_URL', 'https://nominatim.openstreetmap.org').replace(/\/$/, ''),
   osrmUrl: str('VITE_OSRM_URL', 'https://router.project-osrm.org').replace(/\/$/, ''),
 
-  currency: str('VITE_CURRENCY', 'LKR'),
-  fare: {
-    base: num('VITE_FARE_BASE', 150),
-    perKm: num('VITE_FARE_PER_KM', 70),
-    perMin: num('VITE_FARE_PER_MIN', 4),
-  },
-
   fcm: {
     enabled: bool('VITE_FCM_ENABLED', false),
     apiKey: str('VITE_FIREBASE_API_KEY'),

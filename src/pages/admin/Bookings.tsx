@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SkeletonList } from '@/components/ui/skeleton';
-import { formatDistance, formatDuration, formatMoney } from '@/lib/utils';
+import { formatDistance, formatDuration } from '@/lib/utils';
 import { useAdminBookings, useAssignRider, useAssignableRiders } from '@/features/admin/hooks';
 import { useCancelBooking } from '@/features/booking/hooks';
 import type { BookingStatus, BookingWithParties } from '@/types/database';
@@ -122,7 +122,7 @@ export default function AdminBookings() {
                 </div>
               </div>
 
-              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
+              <dl className="mt-3 grid grid-cols-3 gap-x-4 gap-y-1 text-xs">
                 <Pair label="Customer" value={booking.customer?.full_name || '--'} />
                 <Pair label="Rider" value={booking.rider?.profile?.full_name || 'Unassigned'} />
                 <Pair
@@ -130,12 +130,6 @@ export default function AdminBookings() {
                   value={`${formatDistance(booking.estimated_distance)} · ${formatDuration(
                     booking.estimated_duration,
                   )}`}
-                />
-                <Pair
-                  label="Fare"
-                  value={formatMoney(
-                    booking.estimated_fare == null ? null : Number(booking.estimated_fare),
-                  )}
                 />
               </dl>
 

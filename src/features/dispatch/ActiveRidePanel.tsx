@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { BookingStatusBadge } from '@/components/shared/StatusBadge';
-import { formatDistance, formatDuration, formatMoney, initials } from '@/lib/utils';
+import { formatDistance, formatDuration, initials } from '@/lib/utils';
 import type { LatLng } from '@/lib/geo';
 import { navigationUrl } from '@/features/map/routing';
 import { useAdvanceStatus, useCancelBooking } from '@/features/booking/hooks';
@@ -100,10 +100,8 @@ export function ActiveRidePanel({
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{customer?.full_name || 'Customer'}</p>
                 <p className="tabular text-xs text-muted-foreground">
-                  {formatMoney(
-                    booking.estimated_fare == null ? null : Number(booking.estimated_fare),
-                  )}{' '}
-                  · {formatDistance(booking.estimated_distance)}
+                  {formatDistance(booking.estimated_distance)} ·{' '}
+                  {formatDuration(booking.estimated_duration)}
                 </p>
               </div>
               {customer?.phone && (

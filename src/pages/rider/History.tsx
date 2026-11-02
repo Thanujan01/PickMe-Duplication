@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from 'date-fns';
-import { Car, CircleDollarSign, Star, TrendingUp } from 'lucide-react';
+import { Car, Star, TrendingUp } from 'lucide-react';
 import { AppShell } from '@/components/shared/AppShell';
 import { BookingListItem } from '@/components/shared/BookingListItem';
 import { DispatchStatusBadge } from '@/components/shared/StatusBadge';
@@ -7,7 +7,7 @@ import { EmptyState, ErrorState } from '@/components/shared/states';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDistance, formatMoney } from '@/lib/utils';
+import { formatDistance } from '@/lib/utils';
 import { useBookingHistory } from '@/features/booking/hooks';
 import { useRecentOffers, useRiderStats } from '@/features/dispatch/hooks';
 
@@ -23,13 +23,8 @@ export default function RiderHistory() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Summary</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+          <CardContent className="grid grid-cols-3 gap-2">
             <Metric icon={Car} label="Total rides" value={String(stats?.rides_total ?? 0)} />
-            <Metric
-              icon={CircleDollarSign}
-              label="Total earned"
-              value={formatMoney(stats?.earnings_total ?? 0)}
-            />
             <Metric
               icon={Star}
               label="Rating"

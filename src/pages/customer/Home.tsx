@@ -16,7 +16,6 @@ import { MapPinConfirm, PlaceSearchSheet } from '@/features/booking/PlaceSearchS
 import { BookingComposer } from '@/features/booking/BookingComposer';
 import { RideTracker } from '@/features/booking/RideTracker';
 import { useTrackingLayers } from '@/features/booking/useTrackingLayers';
-import type { VehicleType } from '@/types/database';
 
 type PinTarget = 'pickup' | 'destination';
 
@@ -31,7 +30,6 @@ export default function CustomerHome() {
 
   const [pickup, setPickup] = React.useState<Place | null>(null);
   const [destination, setDestination] = React.useState<Place | null>(null);
-  const [vehicleType, setVehicleType] = React.useState<VehicleType>('car');
 
   const [searchFor, setSearchFor] = React.useState<PinTarget | null>(null);
   const [pinMode, setPinMode] = React.useState<PinTarget | null>(null);
@@ -103,7 +101,7 @@ export default function CustomerHome() {
         destination: { lat: destination.lat, lng: destination.lng, address: destination.address },
         estimatedDistance: route?.distance ?? null,
         estimatedDuration: route?.duration ?? null,
-        vehicleType,
+        vehicleType: 'bus',
         idempotencyKey: idempotencyKey.current,
       });
       // The active-booking query takes over and RideTracker renders.
@@ -208,8 +206,6 @@ export default function CustomerHome() {
             destination={destination}
             route={route}
             routing={routing}
-            vehicleType={vehicleType}
-            onVehicleType={setVehicleType}
             onEditPickup={() => setSearchFor('pickup')}
             onEditDestination={() => setSearchFor('destination')}
             onSubmit={submit}

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {
   CheckCircle2,
-  Clock,
   Loader2,
   Phone,
   RefreshCw,
@@ -23,7 +22,8 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { BookingStatusBadge } from '@/components/shared/StatusBadge';
-import { formatDistance, formatDuration, formatMoney, initials, secondsUntil } from '@/lib/utils';
+import { RouteVisual } from '@/components/shared/RouteVisual';
+import { formatDistance, formatDuration, initials, secondsUntil } from '@/lib/utils';
 import type { BookingWithParties } from '@/types/database';
 import { useBookingDispatches, useCancelBooking, useRetryDispatch } from './hooks';
 import type { TrackingLayers } from './useTrackingLayers';
@@ -293,27 +293,12 @@ export function RideTracker({
 
 function TripSummary({ booking }: { booking: BookingWithParties }) {
   return (
-    <div className="space-y-2">
-      <div className="flex items-start gap-2.5">
-        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-success" />
-        <p className="min-w-0 flex-1 truncate text-sm">{booking.pickup_address || 'Pickup point'}</p>
-      </div>
-      <div className="flex items-start gap-2.5">
-        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-foreground" />
-        <p className="min-w-0 flex-1 truncate text-sm">
-          {booking.destination_address || 'Destination'}
-        </p>
-      </div>
-      <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5" />
-          <span className="tabular">{formatDuration(booking.estimated_duration)}</span>
-        </span>
-        <span className="tabular">{formatDistance(booking.estimated_distance)}</span>
-        <span className="tabular ml-auto font-semibold text-foreground">
-          {formatMoney(booking.estimated_fare == null ? null : Number(booking.estimated_fare))}
-        </span>
-      </div>
-    </div>
+    <RouteVisual
+      pickup={booking.pickup_address || 'Pickup point'}
+      destination={booking.destination_address || 'Destination'}
+      distanceM={booking.estimated_distance}
+      durationS={booking.estimated_duration}
+      pending={booking.status === 'searching' || booking.status === 'no_rider_available'}
+    />
   );
 }

@@ -2,7 +2,7 @@ import * as React from 'react';
 import {
   AlertTriangle,
   Car,
-  CircleDollarSign,
+  Route,
   Loader2,
   Power,
   Satellite,
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { AvailabilityBadge } from '@/components/shared/StatusBadge';
-import { cn, formatMoney } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { isValidLatLng } from '@/lib/geo';
 import { MapCanvas, NO_ROUTES } from '@/features/map/MapCanvas';
 import type { MapMarker } from '@/features/map/types';
@@ -264,7 +264,7 @@ function IdlePanel({
   online: boolean;
   goingOnline: boolean;
   onGoOnline: () => void;
-  stats: { rides_today: number; earnings_today: number; earnings_total: number; acceptance_rate: number | null } | undefined;
+  stats: { rides_today: number; rides_total: number; acceptance_rate: number | null } | undefined;
   hasVehicle: boolean;
 }) {
   return (
@@ -276,11 +276,7 @@ function IdlePanel({
             label="Rides today"
             value={String(stats?.rides_today ?? 0)}
           />
-          <Stat
-            icon={CircleDollarSign}
-            label="Earned today"
-            value={formatMoney(stats?.earnings_today ?? 0)}
-          />
+          <Stat icon={Route} label="Total rides" value={String(stats?.rides_total ?? 0)} />
           <Stat
             icon={TrendingUp}
             label="Acceptance"

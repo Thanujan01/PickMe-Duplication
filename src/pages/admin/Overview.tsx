@@ -15,7 +15,7 @@ import { ErrorState } from '@/components/shared/states';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { cn, formatMoney } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useAdminStats } from '@/features/admin/hooks';
 
 export default function AdminOverview() {
@@ -126,18 +126,12 @@ export default function AdminOverview() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Revenue today</CardTitle>
+              <CardTitle className="text-sm">Operations</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-9 w-32" />
-              ) : (
-                <p className="tabular text-3xl font-bold">
-                  {formatMoney(Number(data?.revenue_today ?? 0))}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-muted-foreground">
-                Sum of estimated fares on completed rides since midnight.
+              <p className="text-xs text-muted-foreground">
+                Dispatch contacts the nearest eligible bus first, then the next, every
+                10 seconds until one accepts.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link

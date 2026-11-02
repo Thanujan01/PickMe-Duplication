@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Clock, MapPin, Navigation2, Route as RouteIcon, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { formatDistance, formatDuration, formatMoney } from '@/lib/utils';
+import { formatDistance, formatDuration } from '@/lib/utils';
 import type { RiderOffer } from './api';
 import { useCountdown } from './hooks';
 
@@ -121,11 +121,6 @@ export function OfferCard({
               <span className="tabular font-semibold">
                 {formatDuration(offer.booking.estimated_duration)}
               </span>
-            </span>
-            <span className="tabular ml-auto font-bold">
-              {formatMoney(
-                offer.booking.estimated_fare == null ? null : Number(offer.booking.estimated_fare),
-              )}
             </span>
           </div>
 

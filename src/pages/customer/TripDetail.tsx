@@ -2,15 +2,13 @@ import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { AppShell } from '@/components/shared/AppShell';
 import { BookingStatusBadge } from '@/components/shared/StatusBadge';
-import { PlaceRow } from '@/components/shared/PlaceRow';
 import { ErrorState } from '@/components/shared/states';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { MapCanvas } from '@/features/map/MapCanvas';
 import { useBooking, useBookingEvents } from '@/features/booking/hooks';
-import { formatDistance, formatDuration, formatMoney } from '@/lib/utils';
+import { RouteVisual } from '@/components/shared/RouteVisual';
 import { useAuth } from '@/features/auth/AuthProvider';
 
 const EVENT_LABELS: Record<string, string> = {
@@ -83,32 +81,12 @@ export default function TripDetail() {
             <BookingStatusBadge status={booking.status} />
           </CardHeader>
           <CardContent>
-            <PlaceRow kind="pickup" label="Pickup" value={booking.pickup_address} />
-            <Separator className="my-1 ml-10 w-auto" />
-            <PlaceRow kind="destination" label="Destination" value={booking.destination_address} />
-
-            <Separator className="my-3" />
-
-            <dl className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">Distance</dt>
-                <dd className="tabular mt-0.5 text-sm font-semibold">
-                  {formatDistance(booking.estimated_distance)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">Duration</dt>
-                <dd className="tabular mt-0.5 text-sm font-semibold">
-                  {formatDuration(booking.estimated_duration)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">Fare</dt>
-                <dd className="tabular mt-0.5 text-sm font-semibold">
-                  {formatMoney(booking.estimated_fare == null ? null : Number(booking.estimated_fare))}
-                </dd>
-              </div>
-            </dl>
+            <RouteVisual
+              pickup={booking.pickup_address}
+              destination={booking.destination_address}
+              distanceM={booking.estimated_distance}
+              durationS={booking.estimated_duration}
+            />
 
             {booking.cancellation_reason && (
               <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">

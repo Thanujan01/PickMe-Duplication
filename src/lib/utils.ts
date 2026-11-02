@@ -1,6 +1,5 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { env } from './env';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,27 +20,6 @@ export function formatDuration(seconds: number | null | undefined): string {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
-}
-
-export function formatMoney(amount: number | null | undefined): string {
-  if (amount == null || !Number.isFinite(amount)) return '--';
-  return `${env.currency} ${amount.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })}`;
-}
-
-/**
- * Local fare preview so the customer sees a number before the booking exists.
- * The authoritative fare is computed by create_booking() from admin_settings.
- */
-export function estimateFare(distanceM: number | null, durationS: number | null): number | null {
-  if (distanceM == null && durationS == null) return null;
-  return Math.round(
-    env.fare.base +
-      env.fare.perKm * ((distanceM ?? 0) / 1000) +
-      env.fare.perMin * ((durationS ?? 0) / 60),
-  );
 }
 
 /** Seconds until an ISO timestamp, never negative. */
