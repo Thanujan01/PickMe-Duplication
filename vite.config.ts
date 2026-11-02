@@ -19,7 +19,21 @@ import path from 'node:path';
  */
 const useHttps = process.env.HTTPS === 'true';
 
+/**
+ * Base path.
+ *
+ * GitHub Pages serves a project site from a sub-path
+ * (`/PickMe-Duplication/`), not the domain root, so every asset URL and the
+ * router basename have to be prefixed. Vercel, Netlify and local dev all serve
+ * from `/`.
+ *
+ *   npm run build         -> base "/"
+ *   npm run build:pages   -> base "/PickMe-Duplication/"
+ */
+const base = process.env.DEPLOY_TARGET === 'gh-pages' ? '/PickMe-Duplication/' : '/';
+
 export default defineConfig({
+  base,
   plugins: [react(), ...(useHttps ? [basicSsl()] : [])],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },

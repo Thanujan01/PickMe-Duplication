@@ -17,7 +17,8 @@ createRoot(container).render(
 // Registered after first paint so it never delays the map.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch((e) => {
+    const swUrl = `${import.meta.env.BASE_URL}sw.js`;
+    void navigator.serviceWorker.register(swUrl, { scope: import.meta.env.BASE_URL }).catch((e) => {
       // The app works fine without it; only install and offline shell are lost.
       console.warn('[pwa] service worker registration failed:', e);
     });

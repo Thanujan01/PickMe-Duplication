@@ -11,9 +11,13 @@
  * are cached, and every navigation falls back to the network first.
  */
 
-const VERSION = 'ride-v1';
+const VERSION = 'ride-v2';
 const SHELL = `${VERSION}-shell`;
-const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon.svg'];
+
+// The app may be served from a sub-path (GitHub Pages project sites are), so
+// everything here is resolved against the worker's own scope rather than '/'.
+const BASE = new URL('./', self.registration.scope).pathname;
+const PRECACHE = [BASE, `${BASE}index.html`, `${BASE}manifest.webmanifest`, `${BASE}icons/icon.svg`];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -47,13 +51,15 @@ self.addEventListener('fetch', (event) => {
   // Navigations: network first, cached shell only as an offline fallback.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html').then((r) => r ?? Response.error())),
+      fetch(request).catch(() =>
+        caches.match(`${BASE}index.html`).then((r) => r ?? Response.error()),
+      ),
     );
     return;
   }
 
   // Build assets are content-hashed, so cache-first is safe for them.
-  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/')) {
+  if (url.pathname.startsWith(`${BASE}assets/`) || url.pathname.startsWith(`${BASE}icons/`)) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
@@ -72,7 +78,7 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const target = event.notification.data?.url || '/';
+  const target = event.notification.data?.url || BASE;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
@@ -107,11 +113,11 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(n.title || 'Ride', {
       body: n.body || '',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/badge-72.png',
+      icon: `${BASE}icons/icon-192.png`,
+      badge: `${BASE}icons/badge-72.png`,
       tag: n.tag || 'ride',
       requireInteraction: n.requireInteraction ?? false,
-      data: { url: (payload.data && payload.data.url) || '/' },
+      data: { url: (payload.data && payload.data.url) || BASE },
     }),
   );
 });

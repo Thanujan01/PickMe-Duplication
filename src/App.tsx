@@ -14,7 +14,8 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      {/* BASE_URL is '/' locally and '/PickMe-Duplication/' on GitHub Pages. */}
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <AuthProvider>
           <AppRoutes />
           <Toaster

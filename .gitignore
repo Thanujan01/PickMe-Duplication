@@ -5,6 +5,8 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+# Public build config for GitHub Pages - contains no secrets, see its header.
+!.env.production
 
 .vscode/*
 !.vscode/extensions.json
