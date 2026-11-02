@@ -1,6 +1,22 @@
 import { supabase, toAppError, unwrap } from '@/lib/supabase';
 import type { Profile, UserRole } from '@/types/database';
 
+/**
+ * Absolute URL for a route inside this deployment.
+ *
+ * BASE_URL is '/' locally but '/PickMe-Duplication/' on GitHub Pages, so
+ * `origin + '/reset-password'` lands on a path that does not exist there.
+ * Every link we hand to Supabase has to go through here.
+ *
+ * Whatever this returns must also be listed under Supabase
+ * Authentication -> URL Configuration -> Redirect URLs, otherwise GoTrue
+ * ignores it and falls back to the project's Site URL.
+ */
+function appUrl(route: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  return `${window.location.origin}${base}/${route.replace(/^\//, '')}`;
+}
+
 export interface SignUpInput {
   email: string;
   password: string;
@@ -15,6 +31,10 @@ export async function signUp(input: SignUpInput) {
     email: input.email.trim().toLowerCase(),
     password: input.password,
     options: {
+      // Send the confirmation link back to THIS deployment. Without it GoTrue
+      // uses the project's Site URL, which defaults to http://localhost:3000 -
+      // so the link dead-ends even though the address is now verified.
+      emailRedirectTo: appUrl('login'),
       // handle_new_user() reads these to build the profile row.
       data: {
         full_name: input.fullName.trim(),
@@ -63,7 +83,7 @@ export async function updateProfile(
 
 export async function sendPasswordReset(email: string) {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-    redirectTo: `${window.location.origin}/reset-password`,
+    redirectTo: appUrl('reset-password'),
   });
   if (error) throw toAppError(error);
 }
