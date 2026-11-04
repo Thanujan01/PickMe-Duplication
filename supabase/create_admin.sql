@@ -15,6 +15,10 @@
 -- re-run this with a new one.
 -- =============================================================================
 
+-- crypt() and gen_salt() come from pgcrypto. Supabase installs it into the
+-- `extensions` schema; make sure, because everything below depends on it.
+create extension if not exists pgcrypto with schema extensions;
+
 create or replace function public.create_admin(
   p_email    text,
   p_password text,
@@ -105,6 +109,23 @@ begin
   -- An admin is not a driver; drop any rider row a previous signup created so
   -- they cannot appear in dispatch.
   delete from public.riders where id = v_id;
+
+  -- -----------------------------------------------------------------------
+  -- Verify for real: read the stored hash back and check the password against
+  -- it. If pgcrypto is misbehaving this fails loudly here rather than showing
+  -- "created" and then "Invalid login credentials" at the sign-in screen.
+  -- -----------------------------------------------------------------------
+  if not exists (
+    select 1 from auth.users
+    where id = v_id
+      and encrypted_password = extensions.crypt(p_password, encrypted_password)
+  ) then
+    raise exception 'Password hash did not verify for %. pgcrypto may not be installed correctly.', v_email;
+  end if;
+
+  if not exists (select 1 from auth.users where id = v_id and email_confirmed_at is not null) then
+    raise exception 'Account % was created but is not confirmed.', v_email;
+  end if;
 
   return query
   select
