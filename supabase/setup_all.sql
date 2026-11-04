@@ -2652,31 +2652,35 @@ create policy admin_settings_select on public.admin_settings
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
--- Migrate existing data first - otherwise the new CHECK would reject it.
+-- ORDER MATTERS: drop, then migrate, then re-add.
+--
+-- The old constraint is `vehicle_type in ('car','bike','tuk','van')`. It stays
+-- in force until dropped, so updating a row to 'bus' while it exists fails
+-- with:
+--
+--   ERROR 23514: new row for relation "bookings" violates check constraint
+--                "bookings_vehicle_type_check"
+--
+-- which reads confusingly, because the rejected value is the one we are
+-- migrating TO.
 -- ---------------------------------------------------------------------------
-update public.vehicles set vehicle_type = 'bus' where vehicle_type <> 'bus';
-update public.bookings set vehicle_type = 'bus' where vehicle_type <> 'bus';
 
--- ---------------------------------------------------------------------------
--- vehicles
--- ---------------------------------------------------------------------------
-alter table public.vehicles
-  drop constraint if exists vehicles_vehicle_type_check;
+-- 1. Remove the old constraints.
+alter table public.vehicles drop constraint if exists vehicles_vehicle_type_check;
+alter table public.bookings drop constraint if exists bookings_vehicle_type_check;
 
-alter table public.vehicles
-  alter column vehicle_type set default 'bus';
+-- 2. With nothing enforcing the old set, migrate the data.
+update public.vehicles set vehicle_type = 'bus' where vehicle_type is distinct from 'bus';
+update public.bookings set vehicle_type = 'bus' where vehicle_type is distinct from 'bus';
 
+-- 3. New defaults for anything inserted from here on.
+alter table public.vehicles alter column vehicle_type set default 'bus';
+alter table public.bookings alter column vehicle_type set default 'bus';
+
+-- 4. Lock the column to the single remaining class. These validate the
+--    existing rows, which step 2 has already made compliant.
 alter table public.vehicles
   add constraint vehicles_vehicle_type_check check (vehicle_type = 'bus');
-
--- ---------------------------------------------------------------------------
--- bookings
--- ---------------------------------------------------------------------------
-alter table public.bookings
-  drop constraint if exists bookings_vehicle_type_check;
-
-alter table public.bookings
-  alter column vehicle_type set default 'bus';
 
 alter table public.bookings
   add constraint bookings_vehicle_type_check check (vehicle_type = 'bus');
